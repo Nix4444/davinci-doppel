@@ -17,6 +17,7 @@ model User{
 
 model Model{
   id   String @id @default(uuid())
+  userId String
   name String
   type ModelTypeEnum
   age Int
@@ -24,7 +25,7 @@ model Model{
   eyeColor EyeColorEnum
   bald Boolean
   trainingImages TrainingImages[]
-  outputImages GeneratedImages[]
+  outputImages OutputImages[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -36,11 +37,13 @@ model TrainingImages{
   model Model @relation(fields: [modelId],references: [id])
 }
 
-model GeneratedImages{
+model OutputImages{
   id String @id @default(uuid())
-  imageUrl String
+  imageUrl String @default("")
   modelId String
   userId String
+  prompt String
+  status OutputImagesStatus @default(Pending)
   model Model @relation(fields: [modelId],references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -58,6 +61,12 @@ model PackPrompts{
   pack Packs @relation(fields: [packId],references: [id])
 
 }
+
+enum OutputImagesStatus{
+  Pending
+  Generated
+  Failed
+}
 enum ModelTypeEnum{
   Man
   Woman
@@ -66,11 +75,11 @@ enum ModelTypeEnum{
 enum EthinicityEnum{
   White
   Black
-  AsianAmerican
-  EastAsian
-  SouthEastAsian
-  SouthAsian
-  MiddleEastern
+  AsianAmerican  @map("Asian American")
+  EastAsian      @map("East Asian")
+  SouthEastAsian @map("South East Asian")
+  SouthAsian     @map("South Asian")
+  MiddleEastern  @map("Middle Eastern")
   Pacific
   Hispanic
 }

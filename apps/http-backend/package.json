@@ -15,9 +15,11 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@fal-ai/client": "^1.2.3",
+    "@repo/common": "workspace:*",
+    "@repo/db": "workspace:*",
     "@types/express": "^5.0.0",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "@repo/common": "workspace:*"
+    "express": "^4.21.2"
   }
 }
