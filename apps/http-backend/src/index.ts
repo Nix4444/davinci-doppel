@@ -1,5 +1,5 @@
 import express from "express";
-import dotenv from "dotenv"
+import dotenv, { parse } from "dotenv"
 import { TrainModel,GenerateImage,GenerateImageFromPack } from "@repo/common/types";
 import { FalAiModel } from "./FalAiModel";
 import { prismaClient } from "@repo/db";
@@ -100,7 +100,7 @@ app.post("/ai/generate",async(req,res)=>{ //to generate an image from a prompt
 
     
 })
-app.post("/pack/generate",async (req,res)=>{ //generate a bunch of images, on a pack
+app.post("/pack/generate",async (req,res)=>{//generate a bunch of images, on a pack
     const parsedBody = GenerateImageFromPack.safeParse(req.body);
     if(!parsedBody.success){
         res.status(411).send({
@@ -113,12 +113,28 @@ app.post("/pack/generate",async (req,res)=>{ //generate a bunch of images, on a 
             packId:parsedBody.data.packId
         }
     })
+    
+    const model = await prismaClient.model.findUnique({
+        where:{
+            id:parsedBody.data.modelId
+        }
+    });
+    if(!model || !model.tensorPath){
+        res.status(411).json({
+            message:"Model not found"
+        })
+        return;
+    }
+    
+    const tensorPath = model.tensorPath
+    let requestIds:{request_id:string}[] =  await Promise.all(prompts.map((prompt)=>falAIModel.generateImage(prompt.prompt,tensorPath)));
     const images = await prismaClient.outputImages.createManyAndReturn({
-        data:prompts.map((prompt)=>({
+        data:prompts.map((prompt,index)=>({
             prompt:prompt.prompt,
             modelId:parsedBody.data.modelId,
             userId:USERID,
-            imageUrl:""
+            imageUrl:"",
+            falAiRequestId: requestIds[index]?.request_id 
         }))
 
     })
