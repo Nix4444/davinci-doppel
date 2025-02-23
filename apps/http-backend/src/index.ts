@@ -1,12 +1,39 @@
 import express from "express";
 import dotenv from "dotenv"
 import { TrainModel,GenerateImage,GenerateImageFromPack } from "@repo/common/types";
+import { FalAiModel } from "./FalAiModel";
 import { prismaClient } from "@repo/db";
+import { S3Client,PutObjectCommand, PutObjectCommandInput } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 dotenv.config();
+const s3Client = new S3Client({
+    region:process.env.S3_REGION || "",
+    credentials:{
+        accessKeyId:process.env.S3_ACCESSKEYID || "",
+        secretAccessKey:process.env.S3_SECRETACCESSKEY || ""
+    }})
 const PORT = process.env.PORT || 3002
+const falAIModel = new FalAiModel()
 const app = express();
 app.use(express.json());
 const USERID = "REPLACE WITH CLERK USERID"
+
+app.get("/pre-signed-url",async(req,res)=>{
+    const key = `models/${Date.now()}_${Math.random()}.zip`
+    const putObjectParams:PutObjectCommandInput = {
+        Bucket: process.env.S3_NAME || "",
+        ContentType: "application/zip",
+        ACL:'public-read',
+        Key:key
+    }
+    const command = new PutObjectCommand(putObjectParams);
+    const url = await getSignedUrl(s3Client,command,{expiresIn:60*5})
+    res.json({
+        url,
+        key
+    })
+
+})
 app.post("/ai/training",async (req,res)=>{ //to train a model on a bunch of photos
     const parsedBody = TrainModel.safeParse(req.body);
 
@@ -16,7 +43,9 @@ app.post("/ai/training",async (req,res)=>{ //to train a model on a bunch of phot
         })
         return;
     }
-    const data = await prismaClient.model.create({
+
+    const {request_id,response_url} = await falAIModel.trainModel(parsedBody.data.zipUrl,parsedBody.data.name)
+    const data = await prismaClient.model.create({  
         data:{
            name:parsedBody.data.name,
            type:parsedBody.data.type,
@@ -24,7 +53,9 @@ app.post("/ai/training",async (req,res)=>{ //to train a model on a bunch of phot
            ethinicity:parsedBody.data.ethinicity,
            eyeColor: parsedBody.data.eyeColor,
            bald:parsedBody.data.bald,
-           userId: USERID
+           userId: USERID,
+           falAiRequestId:request_id,
+           zipUrl:parsedBody.data.zipUrl
 
         }
 
@@ -42,12 +73,25 @@ app.post("/ai/generate",async(req,res)=>{ //to generate an image from a prompt
         })
         return;
     }
+    const model = await prismaClient.model.findUnique({
+        where:{
+            id:parsedBody.data.modelId
+        }
+    })
+    if(!model || !model.tensorPath){
+        res.status(411).json({
+            message:"Model not found"
+        })
+        return;
+    }
+    const {request_id,response_url} = await falAIModel.generateImage(parsedBody.data.prompt,model.tensorPath)
     const data = await prismaClient.outputImages.create({
         data: {
             prompt:parsedBody.data.prompt,
             userId:USERID,
             modelId:parsedBody.data.modelId,
-            imageUrl:""
+            imageUrl:"",
+            falAiRequestId:request_id
         }
     })
     res.json({
@@ -109,7 +153,40 @@ app.get("/image/bulk",async (req,res)=>{
 
 })
 
-
+app.post("/fal-ai/webhook/train",async (req,res)=>{
+    console.log(req.body);
+    //update the status of the image in the DB
+    const requestId = req.body.request_id;
+    await prismaClient.model.updateMany({
+        where:{
+            falAiRequestId:requestId
+        },
+        data: {
+            trainingStatus:"Generated",
+            tensorPath:req.body.tensor_path
+        }
+    })
+    res.json({
+        message:"Webhook received"
+    })
+})
+app.post("/fal-ai/webhook/image ",async (req,res)=>{
+    console.log(req.body);
+    //update the status of the image in the DB
+    const requestId = req.body.request_id;
+    await prismaClient.outputImages.updateMany({
+        where:{
+            falAiRequestId:requestId
+        },
+        data: {
+            status:"Generated",
+            imageUrl:req.body.image_url
+        }
+    })
+    res.json({
+        message:"Webhook received"
+    })
+})
 app.listen(PORT,async ()=>{
     console.log(`HTTP backend UP @ PORT ${PORT}`);
 })

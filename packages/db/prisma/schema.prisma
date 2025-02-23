@@ -24,17 +24,15 @@ model Model{
   ethinicity EthinicityEnum
   eyeColor EyeColorEnum
   bald Boolean
-  trainingImages TrainingImages[]
+  triggerWord String?
+  tensorPath String?
+  trainingStatus ModelTrainingEnumStatus @default(Pending)
   outputImages OutputImages[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  falAiRequestId String?
+  zipUrl String
 
-}
-model TrainingImages{
-  id String @id @default(uuid())
-  imageUrl String
-  modelId String
-  model Model @relation(fields: [modelId],references: [id])
 }
 
 model OutputImages{
@@ -43,6 +41,7 @@ model OutputImages{
   modelId String
   userId String
   prompt String
+  falAiRequestId String?
   status OutputImagesStatus @default(Pending)
   model Model @relation(fields: [modelId],references: [id])
   createdAt DateTime @default(now())
@@ -62,6 +61,11 @@ model PackPrompts{
 
 }
 
+enum ModelTrainingEnumStatus{
+  Pending
+  Generated
+  Failed
+}
 enum OutputImagesStatus{
   Pending
   Generated

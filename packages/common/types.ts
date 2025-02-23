@@ -1,5 +1,4 @@
-import {string, z} from "zod";
-
+import {z} from "zod";
 
 export const TrainModel = z.object({
     name:z.string(),
@@ -9,7 +8,7 @@ export const TrainModel = z.object({
     ethinicity: z.enum(["White","Black","AsianAmerican","EastAsian","SouthEastAsian","SouthAsian","MiddleEastern","Pacific","Hispanic"]),
     eyeColor:z.enum(["Black","Brown","Hazel","Gray","Blue","Green"]),
     bald:z.boolean(),
-    images:z.array(z.string())
+    zipUrl:z.string()
 
 
 })
