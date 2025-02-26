@@ -84,7 +84,6 @@ enum EthinicityEnum{
   SouthEastAsian @map("South East Asian")
   SouthAsian     @map("South Asian")
   MiddleEastern  @map("Middle Eastern")
-  Pacific
   Hispanic
 }
 

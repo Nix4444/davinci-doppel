@@ -5,6 +5,7 @@ import { FalAiModel } from "./FalAiModel";
 import { prismaClient } from "@repo/db";
 import { S3Client,PutObjectCommand, PutObjectCommandInput } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import cors from "cors";
 dotenv.config();
 const s3Client = new S3Client({
     region:process.env.S3_REGION || "",
@@ -15,6 +16,7 @@ const s3Client = new S3Client({
 const PORT = process.env.PORT || 3002
 const falAIModel = new FalAiModel()
 const app = express();
+app.use(cors())
 app.use(express.json());
 const USERID = "REPLACE WITH CLERK USERID"
 
