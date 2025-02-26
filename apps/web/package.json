@@ -30,7 +30,8 @@
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.0.2",
     "tailwindcss": "^4.0.8",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "@repo/common": "workspace:*"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

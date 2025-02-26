@@ -2,7 +2,8 @@
   "name": "@repo/common",
   "version": "1.0.0",
   "exports":{
-  "./types":"./types.ts"
+  "./types":"./types.ts",
+  "./inferred": "./inferred-types.ts"
   },
   "scripts": {
     "build": "tsc",

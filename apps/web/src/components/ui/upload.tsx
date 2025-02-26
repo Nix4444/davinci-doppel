@@ -3,8 +3,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button"
 import axios from "axios";
 import JSZip from "jszip";
-
-export function UploadModal() {
+interface uploadModalProps{
+  onUploadDone:(zipUrl:string)=>void
+}
+export function UploadModal(props:uploadModalProps) {
   return (
     <Card>
       <CardHeader>
@@ -35,7 +37,7 @@ export function UploadModal() {
                     formData.append("file",content,s3Key);
                     formData.append(s3Key,s3Url);
                     const s3Response = await axios.put(s3Url,formData)
-                    console.log(s3Response.data);
+                    props.onUploadDone(`${process.env.S3BUCKET_URL}/${s3Key}`)
                 }
                 
             }
