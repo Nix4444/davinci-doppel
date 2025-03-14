@@ -3,8 +3,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button"
 import axios from "axios";
 import JSZip from "jszip";
+import { useState } from "react";
 interface uploadModalProps{
-  onUploadDone:(zipUrl:string)=>void
+  onUploadDone:(zipUrl:string)=>void,
+  setLoading:(loading:boolean)=>void,
+  setError:(error:boolean)=>void
 }
 export function UploadModal(props:uploadModalProps) {
   return (
@@ -32,12 +35,22 @@ export function UploadModal(props:uploadModalProps) {
                         zip.file(file.name,content);
 
                     }
-                    const content = await zip.generateAsync({type:"blob"});
-                    const formData = new FormData();
-                    formData.append("file",content,s3Key);
-                    formData.append(s3Key,s3Url);
-                    const s3Response = await axios.put(s3Url,formData)
-                    props.onUploadDone(`${process.env.S3BUCKET_URL}/${s3Key}`)
+                    try{
+                      const content = await zip.generateAsync({type:"blob"});
+                      const formData = new FormData();
+                      formData.append("file",content,s3Key);
+                      formData.append(s3Key,s3Url);
+                      props.setLoading(true)
+                      const s3Response = await axios.put(s3Url,formData)
+                      props.setLoading(false)
+                      props.onUploadDone(`${process.env.S3BUCKET_URL}/${s3Key}`)
+                    }catch(e){
+                      props.setLoading(false)
+                      props.setError(true)
+
+                    }
+                    
+                    
                 }
                 
             }

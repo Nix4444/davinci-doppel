@@ -1,3 +1,4 @@
+"use client"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -22,7 +23,7 @@ import { UploadModal } from "@/components/ui/upload"
 import { useState } from "react"
 import { TrainModelInput, GenerateImageInput, GenerateImagesFromPackInput } from "@repo/common/inferred"
 import { useRouter } from "next/navigation"
-
+import axios from "axios"
 export default function Train() {
   const [zipUrl, setZipUrl] = useState<string>("");
   const [type, setType] = useState("");
@@ -31,18 +32,26 @@ export default function Train() {
   const [eyeColor, setEyeColor] = useState<string>("");
   const [bald, setBald] = useState<boolean>(false);
   const [name, setName] = useState<string>("")
+  const [loading,setLoading] = useState(false)
+  const [error,setError] = useState(false)
   const router = useRouter();
 
   async function trainModel() {
     const input:TrainModelInput = {
       zipUrl,
-      type,
+      type: type as TrainModelInput["type"],
       age: parseInt(age ?? "0"),
-      ethinicity,
-      eyeColor,
+      ethinicity: type as TrainModelInput["ethinicity"],
+      eyeColor: type as TrainModelInput["eyeColor"],
       bald,
       name
     }
+    const response = await axios.post(`http://localhost:3002/ai/training`,input,{
+      headers:{
+        Authorization:`Bearer TOKEN HERE`
+      }
+    })
+    router.push("/");
   }
   return <div className="flex flex-col items-center justify-center h-full">
     <ThemeProvider
@@ -60,15 +69,15 @@ export default function Train() {
           <div className="grid w-full items-center gap-4">
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="name">Name</Label>
-              <Input id="name" placeholder="Name of your project" />
+              <Input onChange={(e)=>setName(e.target.value)} id="name" placeholder="Name of your project" />
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="name">Age</Label>
-              <Input id="name" placeholder="Age of the model" />
+              <Input onChange={(e)=>setAge(e.target.value)} id="name" placeholder="Age of the model" />
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="name">Type</Label>
-              <Select>
+              <Select onValueChange={(e)=>setType(e)}>
                 <SelectTrigger id="framework">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -83,7 +92,7 @@ export default function Train() {
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="name">Ethinicity</Label>
-              <Select>
+              <Select onValueChange={(e)=>setEthinicity(e)}>
                 <SelectTrigger id="framework">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -101,7 +110,7 @@ export default function Train() {
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="name">Eye Colour</Label>
-              <Select>
+              <Select onValueChange={(e)=>{setEyeColor(e)}}>
                 <SelectTrigger id="framework">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -117,19 +126,32 @@ export default function Train() {
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="name">Bald</Label>
-              <Switch />
+              <Switch onClick={()=>setBald(e=>!e)}/>
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="name">Upload your images</Label>
-              <UploadModal onUploadDone={() => {
-
+              <UploadModal setError={setError} setLoading={setLoading} onUploadDone={(e) => {
+                setZipUrl(e);
               }} />
+              {loading && !error && (<p className="mt-2 text-sm text-muted-foreground">
+                  Uploding photos...
+                </p>)}
+              {!loading && zipUrl && !error && (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  ✓ Photos uploaded successfully
+                </p>
+              )}
+              {!loading && !zipUrl && error && (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  ✖ Failed to upload Photos
+                </p>
+              )}
             </div>
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
           <Button variant="outline">Cancel</Button>
-          <Button>Create Model</Button>
+          <Button disabled={!name || !zipUrl || !type || !age || !ethinicity || !eyeColor || error || loading} onClick={trainModel}>Create Model</Button>
         </CardFooter>
       </Card>
     </ThemeProvider>
