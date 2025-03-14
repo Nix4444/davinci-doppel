@@ -54,12 +54,6 @@ export default function Train() {
     router.push("/");
   }
   return <div className="flex flex-col items-center justify-center h-full">
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
       <Card className="w-[350px]">
         <CardHeader>
           <CardTitle>Name of your model</CardTitle>
@@ -154,7 +148,6 @@ export default function Train() {
           <Button disabled={!name || !zipUrl || !type || !age || !ethinicity || !eyeColor || error || loading} onClick={trainModel}>Create Model</Button>
         </CardFooter>
       </Card>
-    </ThemeProvider>
 
   </div>
 
